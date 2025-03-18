@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"handler/flow"
 	"handler/function"
 )
 
@@ -43,8 +42,11 @@ func main() {
 
 // Handle is the main entrypoint for the function for Flow execution
 func handle(w http.ResponseWriter, r *http.Request) {
-	var input flow.FlowInput
 
+	// Create a new FlowInput object
+	var input function.FlowInput
+
+	// Read the request body
 	if r.Body != nil {
 		defer r.Body.Close()
 
@@ -53,20 +55,19 @@ func handle(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%+v\n", input)
 	}
 
-	flowOutput, err := function.ExecFlow(input)
+	// Execute the Flow
+	outputData, err := function.ExecFlow(input)
+
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(fmt.Sprintf("error: %s", err.Error())))
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(flowOutput.Data)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(fmt.Sprintf("error: %s", err.Error())))
-		return
-	}
+	// Write the output data to the response writer and return it
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(outputData)
 	return
 }
 
